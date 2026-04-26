@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>LinerSync QC</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{
+      --bg:#07111f;
+      --card:#111c2e;
+      --card2:#16263d;
+      --line:#263953;
+      --text:#f8fafc;
+      --muted:#a8b3c7;
+      --accent:#38bdf8;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --shadow:0 14px 35px rgba(0,0,0,.35);
+      --r:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #12365c 0, #07111f 42%, #050914 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+    button,input,select,textarea{font:inherit}
+    .app{max-width:920px;margin:0 auto;padding:14px 14px 88px}
+    .top{
+      position:sticky;top:0;z-index:10;margin:-14px -14px 12px;padding:14px;
+      background:rgba(7,17,31,.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)
+    }
+    .brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .logo{display:flex;align-items:center;gap:10px}
+    .mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#22c55e);display:grid;place-items:center;color:#06111d;font-weight:900}
+    h1{font-size:20px;line-height:1.05;margin:0}
+    .sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .status{font-size:12px;padding:8px 10px;border-radius:999px;background:rgba(34,197,94,.13);color:#9ef2b6;border:1px solid rgba(34,197,94,.35);white-space:nowrap}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    .tile,.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.1);box-shadow:var(--shadow);border-radius:var(--r)}
+    .tile{padding:14px;min-height:104px;text-align:left;color:var(--text);cursor:pointer}
+    .tile strong{display:block;font-size:15px;margin-top:8px}
+    .tile span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+    .ico{width:32px;height:32px;border-radius:12px;background:rgba(56,189,248,.16);display:grid;place-items:center}
+    .card{padding:14px;margin:12px 0}
+    .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px}
+    .section-title h2{font-size:17px;margin:0}
+    label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+    input,select,textarea{
+      width:100%;border:1px solid rgba(255,255,255,.12);background:rgba(2,6,23,.52);
+      color:var(--text);border-radius:14px;padding:12px;outline:none;
+    }
+    textarea{min-height:92px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .btn{
+      border:0;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;color:#06111d;
+      background:linear-gradient(135deg,#38bdf8,#67e8f9)
+    }
+    .btn.secondary{background:rgba(255,255,255,.09);color:var(--text);border:1px solid rgba(255,255,255,.12)}
+    .btn.good{background:linear-gradient(135deg,#22c55e,#86efac)}
+    .btn.warn{background:linear-gradient(135deg,#f59e0b,#fde68a)}
+    .btn.bad{background:linear-gradient(135deg,#ef4444,#fca5a5)}
+    .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;font-size:12px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
+    .log{padding:12px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);border-radius:18px;margin:8px 0}
+    .log-head{display:flex;justify-content:space-between;gap:8px;align-items:start}
+    .log-title{font-weight:900}
+    .log-meta{font-size:12px;color:var(--muted);margin-top:4px}
+    .small{font-size:12px;color:var(--muted)}
+    .bottomnav{
+      position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(7,17,31,.92);backdrop-filter:blur(16px);
+      border-top:1px solid rgba(255,255,255,.1);display:grid;grid-template-columns:repeat(4,1fr);padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-right));
+    }
+    .navbtn{background:transparent;border:0;color:var(--muted);padding:8px 4px;border-radius:14px;font-size:12px}
+    .navbtn.active{color:var(--text);background:rgba(56,189,248,.13)}
+    .hidden{display:none!important}
+    .photoPreview{max-width:100%;border-radius:16px;margin-top:10px;border:1px solid rgba(255,255,255,.12)}
+    .danger{color:#fecaca}
+    .ok{color:#bbf7d0}
+    .empty{text-align:center;color:var(--muted);padding:28px 12px}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .kpi div{padding:12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}
+    .kpi strong{font-size:20px;display:block}
+    .kpi span{font-size:11px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">
+          <div class="mark">LS</div>
+          <div>
+            <h1>LinerSync QC</h1>
+            <div class="sub">Tap capture • GPS • 12hr time • Last Logs</div>
+          </div>
+        </div>
+        <div id="saveStatus" class="status">Ready</div>
+      </div>
+    </div>
+
+    <main id="screenHome">
+      <div class="card">
+        <div class="section-title"><h2>Project</h2><span class="pill" id="projectBadge">No project</span></div>
+        <label>Project / Site Name</label>
+        <input id="projectName" placeholder="Example: South Yuma Landfill Cell 4" />
+        <div class="row">
+          <div><label>Client / Owner</label><input id="clientName" placeholder="Owner / client" /></div>
+          <div><label>QC Technician</label><input id="techName" placeholder="Steveo" /></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn good" onclick="saveProject()">Save Project</button>
+          <button class="btn secondary" onclick="captureGPS()">Update GPS</button>
+        </div>
+        <p class="small" id="gpsLine">GPS not captured yet.</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h2>Constant Job Data</h2><span class="pill">Auto-fill until changed</span></div>
+        <p class="small">Fill this once. Every new record gets these values automatically until you change them.</p>
+        <div class="row">
+          <div><label>Active Roll Number</label><input id="constRollNumber" placeholder="Roll ID stays until changed" /></div>
+          <div><label>Panel / Area Active</label><input id="constPanelArea" placeholder="Panel B12 / Pond 3 / Cell 4" /></div>
+        </div>
+        <div class="row">
+          <div><label>Liner Type</label><input id="constLinerType" placeholder="HDPE / LLDPE / GCL / Geotextile" /></div>
+          <div><label>Liner Thickness</label><input id="constThickness" placeholder="60 mil / 80 mil / 40 mil" /></div>
+        </div>
+        <div class="row">
+          <div><label>Liner Width</label><input id="constWidth" placeholder="22.5 ft / 23 ft / 15 ft" /></div>
+          <div><label>Texture / Color</label><input id="constTextureColor" placeholder="Double textured black" /></div>
+        </div>
+        <div class="row">
+          <div><label>Installer / Crew</label><input id="constInstaller" placeholder="Crew name / installer" /></div>
+          <div><label>QC / CQA Company</label><input id="constQcCompany" placeholder="QC company" /></div>
+        </div>
+        <div class="row">
+          <div><label>Wedge Machine</label><input id="constWedgeMachine" placeholder="Wedge ID" /></div>
+          <div><label>Extrusion Welder</label><input id="constExtrusionWelder" placeholder="Extruder ID" /></div>
+        </div>
+        <div class="row">
+          <div><label>Rod / Resin Lot</label><input id="constRodLot" placeholder="Rod lot / resin lot" /></div>
+          <div><label>Shift / Weather</label><input id="constShiftWeather" placeholder="Day shift / sunny / windy" /></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn good" onclick="saveConstants()">Save Constant Data</button>
+          <button class="btn secondary" onclick="applyConstantsToForm()">Apply To Current Log</button>
+        </div>
+        <p class="small" id="constantLine">No constant data saved yet.</p>
+      
+
+      <div class="kpi">
+        <div><strong id="kpiLogs">0</strong><span>Total logs</span></div>
+        <div><strong id="kpiToday">0</strong><span>Today</span></div>
+        <div><strong id="kpiLocked">0</strong><span>Locked</span></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h2>Tap To Capture</h2><span class="pill">Real data build</span></div>
+        <div class="grid" id="moduleGrid"></div>
+      </div>
+    </main>
+
+    <main id="screenCapture" class="hidden">
+      <div class="card">
+        <div class="section-title">
+          <h2 id="captureTitle">Capture</h2>
+          <button class="btn secondary" onclick="showScreen('Home')">Back</button>
+        </div>
+
+        <label>Type</label>
+        <select id="recordType"></select>
+        <p class="small" id="activeConstLine">Constant data will auto-fill here after saving.</p>
+
+        <div class="row">
+          <div><label>Location / Station / Area</label><input id="locationText" placeholder="Pond 3 north slope, seam N4/N5..." /></div>
+          <div><label>Panel / Seam / Roll</label><input id="assetText" placeholder="Panel B12 / Seam S-04 / Roll 1234" /></div>
+        </div>
+
+        <div id="dynamicFields"></div>
+
+        <label>Photo</label>
+        <input id="photoInput" type="file" accept="image/*" capture="environment" />
+        <img id="photoPreview" class="photoPreview hidden" />
+
+        <label>Comments</label>
+        <textarea id="comments" placeholder="Only add what matters."></textarea>
+
+        <div class="btnrow">
+          <button class="btn" onclick="tapCapture()">Tap Capture GPS/Time</button>
+          <button class="btn good" onclick="saveRecord(false)">Save Record</button>
+          <button class="btn warn" onclick="saveRecord(true)">Approve / Lock</button>
+        </div>
+
+        <p class="small" id="captureMeta">No capture yet.</p>
+      </div>
+    </main>
+
+    <main id="screenLogs" class="hidden">
+      <div class="card">
+        <div class="section-title">
+          <h2>Last Logs</h2>
+          <button class="btn secondary" onclick="renderLogs()">Refresh</button>
+        </div>
+        <div class="row">
+          <div>
+            <label>Filter</label>
+            <select id="logFilter" onchange="renderLogs()">
+              <option value="">All records</option>
+            </select>
+          </div>
+          <div>
+            <label>Search</label>
+            <input id="logSearch" oninput="renderLogs()" placeholder="panel, seam, roll, location..." />
+          </div>
+        </div>
+      </div>
+      <div id="logsList"></div>
+    </main>
+
+    <main id="screenExport" class="hidden">
+      <div class="card">
+        <div class="section-title"><h2>Export / Backup</h2><span class="pill">Phone local</span></div>
+        <p class="small">This build saves on the phone/browser first. Export CSV or JSON backup before changing devices.</p>
+        <div class="btnrow">
+          <button class="btn good" onclick="exportCSV()">Export CSV</button>
+          <button class="btn" onclick="exportJSON()">Backup JSON</button>
+          <button class="btn secondary" onclick="document.getElementById('restoreInput').click()">Restore JSON</button>
+          <input id="restoreInput" class="hidden" type="file" accept="application/json" onchange="restoreJSON(event)" />
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Danger Zone</h2></div>
+        <p class="small danger">Only use this after exporting a backup.</p>
+        <button class="btn bad" onclick="clearAll()">Delete All Local Data</button>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottomnav">
+    <button id="navHome" class="navbtn active" onclick="showScreen('Home')">Home</button>
+    <button id="navCapture" class="navbtn" onclick="openCapture('Panel Placement')">Capture</button>
+    <button id="navLogs" class="navbtn" onclick="showScreen('Logs')">Last Logs</button>
+    <button id="navExport" class="navbtn" onclick="showScreen('Export')">Export</button>
+  </nav>
+
+<script>
+const modules = [
+  {name:'Roll Inventory', icon:'🎞️', desc:'Roll ID, delivery, assigned panel'},
+  {name:'Panel Placement', icon:'🧩', desc:'Panel number, roll, placement'},
+  {name:'Wedge Weld Test', icon:'🔥', desc:'Temp, speed, peel/shear'},
+  {name:'Extrusion Weld Test', icon:'🧪', desc:'Preheat, trial weld, repair'},
+  {name:'Air Test', icon:'💨', desc:'Start/end PSI, hold minutes'},
+  {name:'Destructive Test', icon:'✂️', desc:'DT ID, seam, station'},
+  {name:'Repair / Patch / Bead', icon:'🩹', desc:'Repair type and location'},
+  {name:'Daily Log', icon:'📋', desc:'End-of-shift notes'}
+];
+
+const fieldsByType = {
+  'Roll Inventory': [
+    ['Roll Number','rollNumber'], ['Material Type','materialType'], ['Thickness','thickness'], ['Assigned Panel','assignedPanel']
+  ],
+  'Panel Placement': [
+    ['Panel Number','panelNumber'], ['Roll Number','rollNumber'], ['Length / Size','panelSize'], ['Tie-In / Direction','direction']
+  ],
+  'Wedge Weld Test': [
+    ['Machine ID','machineId'], ['Temp','temp'], ['Speed','speed'], ['Result','result']
+  ],
+  'Extrusion Weld Test': [
+    ['Welder ID','welderId'], ['Preheat / Grinder','prep'], ['Rod Lot','rodLot'], ['Result','result']
+  ],
+  'Air Test': [
+    ['Start PSI','startPsi'], ['End PSI','endPsi'], ['Hold Minutes','holdMin'], ['Result','result']
+  ],
+  'Destructive Test': [
+    ['DT Number','dtNumber'], ['Seam ID','seamId'], ['Station / Footage','station'], ['Lab / Result','result']
+  ],
+  'Repair / Patch / Bead': [
+    ['Repair ID','repairId'], ['Repair Type','repairType'], ['Size','repairSize'], ['Verified By','verifiedBy']
+  ],
+  'Daily Log': [
+    ['Crew','crew'], ['Weather','weather'], ['Production','production'], ['Issues','issues']
+  ]
+};
+
+let state = {
+  project: JSON.parse(localStorage.getItem('ls_project') || '{}'),
+  logs: JSON.parse(localStorage.getItem('ls_logs') || '[]'),
+  gps: JSON.parse(localStorage.getItem('ls_gps') || 'null'),
+  constants: JSON.parse(localStorage.getItem('ls_constants') || '{}'),
+  currentType: 'Panel Placement',
+  lastCapture: null,
+  photoData: ''
+};
+
+function now12(){
+  return new Date().toLocaleString([], {year:'numeric', month:'2-digit', day:'2-digit', hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true});
+}
+function isoDate(){ return new Date().toISOString(); }
+function setStatus(txt){ document.getElementById('saveStatus').textContent = txt; }
+
+function persist(){
+  localStorage.setItem('ls_project', JSON.stringify(state.project));
+  localStorage.setItem('ls_logs', JSON.stringify(state.logs));
+  localStorage.setItem('ls_gps', JSON.stringify(state.gps));
+  localStorage.setItem('ls_constants', JSON.stringify(state.constants));
+  updateHome();
+  setStatus('Saved');
+  setTimeout(()=>setStatus('Ready'), 1200);
+}
+
+function showScreen(name){
+  ['Home','Capture','Logs','Export'].forEach(s=>{
+    document.getElementById('screen'+s).classList.toggle('hidden', s!==name);
+    document.getElementById('nav'+s).classList.toggle('active', s===name);
+  });
+  if(name==='Logs') renderLogs();
+  if(name==='Home') updateHome();
+}
+
+function init(){
+  const grid = document.getElementById('moduleGrid');
+  const typeSelect = document.getElementById('recordType');
+  const filter = document.getElementById('logFilter');
+  modules.forEach(m=>{
+    const b = document.createElement('button');
+    b.className='tile';
+    b.innerHTML = `<div class="ico">${m.icon}</div><strong>${m.name}</strong><span>${m.desc}</span>`;
+    b.onclick=()=>openCapture(m.name);
+    grid.appendChild(b);
+
+    const opt = new Option(m.name,m.name);
+    typeSelect.add(opt);
+
+    const opt2 = new Option(m.name,m.name);
+    filter.add(opt2);
+  });
+  typeSelect.onchange = ()=>openCapture(typeSelect.value, false);
+
+  document.getElementById('projectName').value = state.project.projectName || '';
+  document.getElementById('clientName').value = state.project.clientName || '';
+  document.getElementById('techName').value = state.project.techName || '';
+  loadConstantFields();
+
+  document.getElementById('photoInput').addEventListener('change', handlePhoto);
+  updateHome();
+  renderDynamicFields();
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
+}
+
+function updateHome(){
+  const p = state.project.projectName || 'No project';
+  document.getElementById('projectBadge').textContent = p;
+  document.getElementById('kpiLogs').textContent = state.logs.length;
+  const today = new Date().toDateString();
+  document.getElementById('kpiToday').textContent = state.logs.filter(x=>new Date(x.createdAt).toDateString()===today).length;
+  document.getElementById('kpiLocked').textContent = state.logs.filter(x=>x.locked).length;
+  document.getElementById('gpsLine').textContent = state.gps ? `Last GPS: ${state.gps.lat.toFixed(6)}, ${state.gps.lng.toFixed(6)} ±${Math.round(state.gps.accuracy||0)}m • ${state.gps.time}` : 'GPS not captured yet.';
+  const c = state.constants || {};
+  const active = [c.rollNumber, c.panelArea, c.linerType, c.thickness, c.width].filter(Boolean).join(' • ');
+  document.getElementById('constantLine').textContent = active ? `Active constants: ${active}` : 'No constant data saved yet.';
+}
+
+
+function loadConstantFields(){
+  const c = state.constants || {};
+  const map = {
+    constRollNumber:'rollNumber',
+    constPanelArea:'panelArea',
+    constLinerType:'linerType',
+    constThickness:'thickness',
+    constWidth:'width',
+    constTextureColor:'textureColor',
+    constInstaller:'installer',
+    constQcCompany:'qcCompany',
+    constWedgeMachine:'wedgeMachine',
+    constExtrusionWelder:'extrusionWelder',
+    constRodLot:'rodLot',
+    constShiftWeather:'shiftWeather'
+  };
+  Object.entries(map).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if(el) el.value = c[key] || '';
+  });
+}
+
+function saveConstants(){
+  state.constants = {
+    rollNumber: document.getElementById('constRollNumber').value.trim(),
+    panelArea: document.getElementById('constPanelArea').value.trim(),
+    linerType: document.getElementById('constLinerType').value.trim(),
+    thickness: document.getElementById('constThickness').value.trim(),
+    width: document.getElementById('constWidth').value.trim(),
+    textureColor: document.getElementById('constTextureColor').value.trim(),
+    installer: document.getElementById('constInstaller').value.trim(),
+    qcCompany: document.getElementById('constQcCompany').value.trim(),
+    wedgeMachine: document.getElementById('constWedgeMachine').value.trim(),
+    extrusionWelder: document.getElementById('constExtrusionWelder').value.trim(),
+    rodLot: document.getElementById('constRodLot').value.trim(),
+    shiftWeather: document.getElementById('constShiftWeather').value.trim(),
+    updatedAt: now12()
+  };
+  persist();
+  applyConstantsToForm();
+}
+
+function applyConstantsToForm(){
+  const c = state.constants || {};
+  const asset = document.getElementById('assetText');
+  const loc = document.getElementById('locationText');
+  if(asset && !asset.value && (c.panelArea || c.rollNumber)){
+    asset.value = [c.panelArea, c.rollNumber ? 'Roll ' + c.rollNumber : ''].filter(Boolean).join(' / ');
+  }
+  if(loc && !loc.value && c.panelArea) loc.value = c.panelArea;
+
+  document.querySelectorAll('[data-dyn]').forEach(el=>{
+    const k = el.dataset.dyn;
+    if(el.value) return;
+    if(k === 'rollNumber') el.value = c.rollNumber || '';
+    if(k === 'assignedPanel' || k === 'panelNumber') el.value = c.panelArea || '';
+    if(k === 'materialType') el.value = c.linerType || '';
+    if(k === 'thickness') el.value = c.thickness || '';
+    if(k === 'panelSize') el.value = [c.width, c.thickness, c.linerType].filter(Boolean).join(' / ');
+    if(k === 'machineId') el.value = c.wedgeMachine || '';
+    if(k === 'welderId') el.value = c.extrusionWelder || '';
+    if(k === 'rodLot') el.value = c.rodLot || '';
+    if(k === 'crew') el.value = c.installer || '';
+    if(k === 'weather') el.value = c.shiftWeather || '';
+  });
+
+  const line = document.getElementById('activeConstLine');
+  if(line){
+    const active = [c.rollNumber ? 'Roll '+c.rollNumber : '', c.width, c.thickness, c.linerType].filter(Boolean).join(' • ');
+    line.textContent = active ? `Auto-fill active: ${active}` : 'No constant data saved yet.';
+  }
+}
+
+
+function saveProject(){
+  state.project = {
+    projectName: document.getElementById('projectName').value.trim(),
+    clientName: document.getElementById('clientName').value.trim(),
+    techName: document.getElementById('techName').value.trim(),
+    updatedAt: now12()
+  };
+  persist();
+}
+
+function captureGPS(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation){
+      state.gps = {lat:0,lng:0,accuracy:0,time:now12(), note:'GPS unavailable'};
+      persist(); resolve(state.gps); return;
+    }
+    setStatus('GPS...');
+    navigator.geolocation.getCurrentPosition(pos=>{
+      state.gps = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        time: now12()
+      };
+      persist(); resolve(state.gps);
+    }, err=>{
+      state.gps = {lat:0,lng:0,accuracy:0,time:now12(), note:'GPS permission denied or unavailable'};
+      persist(); resolve(state.gps);
+    }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+  });
+}
+
+function openCapture(type, switchScreen=true){
+  state.currentType = type;
+  document.getElementById('recordType').value = type;
+  document.getElementById('captureTitle').textContent = type;
+  renderDynamicFields();
+  applyConstantsToForm();
+  if(switchScreen) showScreen('Capture');
+}
+
+function renderDynamicFields(){
+  const wrap = document.getElementById('dynamicFields');
+  wrap.innerHTML = '';
+  const fields = fieldsByType[state.currentType] || [];
+  for(let i=0;i<fields.length;i+=2){
+    const row = document.createElement('div');
+    row.className='row';
+    fields.slice(i,i+2).forEach(([label,key])=>{
+      const div=document.createElement('div');
+      div.innerHTML = `<label>${label}</label><input data-dyn="${key}" placeholder="${label}" />`;
+      row.appendChild(div);
+    });
+    wrap.appendChild(row);
+  }
+}
+
+function handlePhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.photoData = reader.result;
+    const img = document.getElementById('photoPreview');
+    img.src = state.photoData;
+    img.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function tapCapture(){
+  const gps = await captureGPS();
+  state.lastCapture = {gps, time: now12(), createdAt: isoDate()};
+  document.getElementById('captureMeta').textContent = `Captured: ${state.lastCapture.time} • GPS ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)} ±${Math.round(gps.accuracy||0)}m`;
+}
+
+function collectDynamic(){
+  const out = {};
+  document.querySelectorAll('[data-dyn]').forEach(el=> out[el.dataset.dyn] = el.value.trim());
+  return out;
+}
+
+async function saveRecord(lock){
+  if(!state.lastCapture) await tapCapture();
+
+  const record = {
+    id: 'LS-' + Date.now(),
+    projectName: state.project.projectName || '',
+    clientName: state.project.clientName || '',
+    techName: state.project.techName || '',
+    type: document.getElementById('recordType').value,
+    location: document.getElementById('locationText').value.trim(),
+    asset: document.getElementById('assetText').value.trim(),
+    constants: {...(state.constants || {})},
+    fields: collectDynamic(),
+    comments: document.getElementById('comments').value.trim(),
+    gps: state.lastCapture.gps,
+    captureTime: state.lastCapture.time,
+    createdAt: state.lastCapture.createdAt,
+    locked: !!lock,
+    photo: state.photoData || ''
+  };
+
+  // Air test validation: hold must be 5+ minutes if entered.
+  if(record.type === 'Air Test'){
+    const hm = parseFloat(record.fields.holdMin || '0');
+    if(hm && hm < 5){
+      alert('Air Test hold time is under 5 minutes. Fix it before locking.');
+      return;
+    }
+  }
+
+  state.logs.unshift(record);
+  persist();
+  clearCaptureForm();
+  showScreen('Logs');
+}
+
+function clearCaptureForm(){
+  document.getElementById('locationText').value='';
+  document.getElementById('assetText').value='';
+  document.getElementById('comments').value='';
+  document.querySelectorAll('[data-dyn]').forEach(el=>el.value='');
+  document.getElementById('photoInput').value='';
+  document.getElementById('photoPreview').classList.add('hidden');
+  document.getElementById('captureMeta').textContent='No capture yet.';
+  state.photoData='';
+  state.lastCapture=null;
+}
+
+function renderLogs(){
+  const list = document.getElementById('logsList');
+  const f = document.getElementById('logFilter').value;
+  const q = document.getElementById('logSearch').value.toLowerCase();
+  let logs = state.logs;
+  if(f) logs = logs.filter(x=>x.type===f);
+  if(q) logs = logs.filter(x=>JSON.stringify(x).toLowerCase().includes(q));
+  if(!logs.length){ list.innerHTML = '<div class="card empty">No logs found.</div>'; return; }
+  list.innerHTML = logs.map(x=>{
+    const dyn = Object.entries(x.fields||{}).filter(([k,v])=>v).map(([k,v])=>`${k}: ${v}`).join(' • ');
+    const gps = x.gps ? `${Number(x.gps.lat).toFixed(6)}, ${Number(x.gps.lng).toFixed(6)}` : 'No GPS';
+    return `<div class="log">
+      <div class="log-head">
+        <div>
+          <div class="log-title">${escapeHtml(x.type)} ${x.locked ? '<span class="ok">LOCKED</span>' : ''}</div>
+          <div class="log-meta">${escapeHtml(x.captureTime || '')} • ${escapeHtml(x.location || 'No location')} • ${escapeHtml(x.asset || '')}</div>
+        </div>
+        <button class="btn secondary" onclick="deleteLog('${x.id}')">Delete</button>
+      </div>
+      <div class="small">${escapeHtml(dyn)}</div>
+      <div class="small">GPS: ${escapeHtml(gps)}</div>
+      ${x.comments ? `<p>${escapeHtml(x.comments)}</p>` : ''}
+      ${x.photo ? `<img class="photoPreview" src="${x.photo}" />` : ''}
+    </div>`;
+  }).join('');
+}
+
+function deleteLog(id){
+  const rec = state.logs.find(x=>x.id===id);
+  if(rec && rec.locked && !confirm('This log is locked. Delete anyway?')) return;
+  state.logs = state.logs.filter(x=>x.id!==id);
+  persist();
+  renderLogs();
+}
+
+function csvSafe(v){
+  if(v===undefined || v===null) return '';
+  const s = typeof v === 'string' ? v : JSON.stringify(v);
+  return '"' + s.replaceAll('"','""') + '"';
+}
+function download(name, content, type){
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function exportCSV(){
+  const headers = ['id','projectName','clientName','techName','type','location','asset','activeRollNumber','linerType','linerThickness','linerWidth','installer','qcCompany','fields','comments','lat','lng','accuracy','captureTime','locked'];
+  const rows = state.logs.map(x=>[
+    x.id,x.projectName,x.clientName,x.techName,x.type,x.location,x.asset,x.constants?.rollNumber,x.constants?.linerType,x.constants?.thickness,x.constants?.width,x.constants?.installer,x.constants?.qcCompany,x.fields,x.comments,
+    x.gps?.lat,x.gps?.lng,x.gps?.accuracy,x.captureTime,x.locked
+  ].map(csvSafe).join(','));
+  download('LinerSync_QC_Export.csv', headers.join(',')+'\n'+rows.join('\n'), 'text/csv');
+}
+function exportJSON(){
+  download('LinerSync_Backup.json', JSON.stringify({project:state.project, constants:state.constants, logs:state.logs, gps:state.gps, exportedAt:now12()}, null, 2), 'application/json');
+}
+function restoreJSON(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      state.project = data.project || {};
+      state.constants = data.constants || {};
+      state.logs = data.logs || [];
+      state.gps = data.gps || null;
+      persist(); initRestoreFields(); alert('Restore complete.');
+    }catch(err){ alert('Bad backup file.'); }
+  };
+  reader.readAsText(file);
+}
+function initRestoreFields(){
+  document.getElementById('projectName').value = state.project.projectName || '';
+  document.getElementById('clientName').value = state.project.clientName || '';
+  document.getElementById('techName').value = state.project.techName || '';
+  loadConstantFields();
+}
+function clearAll(){
+  if(!confirm('Delete all LinerSync local data from this browser?')) return;
+  state.logs=[]; state.project={}; state.constants={}; state.gps=null; persist(); initRestoreFields(); renderLogs();
+}
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+init();
+</script>
+</body>
+</html>
